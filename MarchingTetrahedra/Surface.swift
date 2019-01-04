@@ -33,15 +33,15 @@ final class Surface {
     }
 
     func createGeometry() -> (SCNGeometry, Int) {
-        self.points.removeAll(keepCapacity: true)
-        self.pointIndexByEdge.removeAll(keepCapacity: true)
-        self.indexes.removeAll(keepCapacity: true)
+        self.points.removeAll(keepingCapacity: true)
+        self.pointIndexByEdge.removeAll(keepingCapacity: true)
+        self.indexes.removeAll(keepingCapacity: true)
 
         for cube in createCubes() {
-            if (cube.isIntersected(self.threshold)) {
+            if (cube.isIntersected(threshold: self.threshold)) {
                 for tetrahedron in cube.subdivide() {
-                    for intersection in tetrahedron.intersectionsWithThreshold(self.threshold) {
-                        self.addPolygonForIntersection(intersection)
+                    for intersection in tetrahedron.intersectionsWithThreshold(threshold: self.threshold) {
+                        self.addPolygonForIntersection(intersection: intersection)
                     }
                 }
             }
@@ -78,11 +78,11 @@ final class Surface {
 
         var idCounter = 0
 
-        for var y = 0; y <= self.height; y++ {
+        for y in 0...self.height {
             let yPos: Float = originY + (Float(y) * self.cubeSize)
-            for var z = 0; z <= self.depth; z++ {
+            for z in 0...self.depth {
                 let zPos: Float = originZ + (Float(z) * self.cubeSize)
-                for var x = 0; x <= self.width; x++ {
+                for x in 0...self.width {
                     let xPos: Float = originX + (Float(x) * self.cubeSize)
                     let position = SCNVector3(x:xPos, y:yPos, z:zPos)
                     let strength = fieldStrengthAtPosition(position)
@@ -93,9 +93,9 @@ final class Surface {
 
         var cubes: Array<Cube> = []
 
-        for var y = 0; y < height; y++ {
-            for var z = 0; z < depth; z++ {
-                for var x = 0; x < width; x++ {
+        for y in 0..<height {
+            for z in 0..<depth {
+                for x in 0..<width {
                     let xLow = x
                     let xHigh = x + 1
                     let yLow = y * (width + 1) * (height + 1)
@@ -120,9 +120,9 @@ final class Surface {
     }
 
     private func addPolygonForIntersection(intersection: Intersection) {
-        let index1 = pointForIntersectedEdge(intersection.edge3)
-        let index2 = pointForIntersectedEdge(intersection.edge2)
-        let index3 = pointForIntersectedEdge(intersection.edge1)
+        let index1 = pointForIntersectedEdge(edge: intersection.edge3)
+        let index2 = pointForIntersectedEdge(edge: intersection.edge2)
+        let index3 = pointForIntersectedEdge(edge: intersection.edge1)
 
         indexes.append(index1)
         indexes.append(index2)
@@ -132,7 +132,7 @@ final class Surface {
     private func pointForIntersectedEdge(edge: Edge) -> Int32 {
         var pointIndex = pointIndexByEdge[edge];
         if (pointIndex == nil) {
-            let pointForEdge = pointAtThresholdOnEdge(edge)
+            let pointForEdge = pointAtThresholdOnEdge(edge: edge)
             points.append(Point(position: pointForEdge))
             let index = Int32(points.count - 1)
             pointIndexByEdge[edge] = index
@@ -170,7 +170,7 @@ final class Surface {
             if (delta < 0) {
                 return pointAtThresholdBetween(vertex1: midpoint, vertex2: vertex2)
             } else {
-                return pointAtThresholdBetween(vertex1: vertex1, vertex2: midpoint)
+                return pointAtThresholdBetween(vertex1: vertex2, vertex2: midpoint)
             }
         }
     }
@@ -178,7 +178,7 @@ final class Surface {
     private func fieldStrengthAtPosition(position: SCNVector3) -> Float {
         var strength = Float(0.0)
         for source in self.sources {
-            strength += source.strengthAtPosition(position)
+            strength += source.strengthAtPosition(position: position)
         }
         return strength
     }
@@ -186,7 +186,7 @@ final class Surface {
     private func createNormalSource() -> SCNGeometrySource {
         var normals = Array<Float>()
 
-        for (var i: Int = 0; i < indexes.count - 2; i+=3) {
+        for i in stride(from: 0, to: indexes.count - 2, by: 3) {
             let point1 = points[Int(indexes[i])]
             let point2 = points[Int(indexes[i + 1])]
             let point3 = points[Int(indexes[i + 2])]
@@ -194,7 +194,7 @@ final class Surface {
             let edge1 = point1.position - point2.position
             let edge2 = point1.position - point3.position
 
-            var normal = edge1.crossProduct(edge2)
+            var normal = edge1.crossProduct(other: edge2)
             normal.normalize()
 
             point1.normals.append(normal)
